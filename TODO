@@ -1,0 +1,101 @@
+# -*- mode: org; -*-
+* TODO Automatically generate =car=, ..., =cddddr=.
+  See [[https://github.com/klutometis/cadr/blob/master/src/cadr/core.clj][cadr]].
+* DONE last
+  CLOSED: [2010-04-21 Wed 16:41]
+  #+BEGIN_SRC R
+    library(RUnit)
+    
+    last <- function(list) car(tail(list, 1))
+    
+    checkEquals(last(list(1, 2, 3)),
+                3,
+                'last element of trinary list')
+  #+END_SRC
+* DONE zip should preserve names
+  CLOSED: [2010-04-21 Wed 12:47]
+  - CLOSING NOTE [2010-04-21 Wed 12:47] \\
+    new function: =zip.with.names=
+  #+BEGIN_SRC R
+    library(RUnit)
+    
+    source('package.R')
+    
+    zip.with.names <- function(...) {
+      if (length(list(...)) == 1)
+        c(...)
+      else {
+        lists <- list(...)
+        lists.names <- names(lists)
+        iter <- function(zipped, lists, names) {
+          if (Reduce(`||`, Map(is.nil, lists), FALSE))
+            zipped
+          else {
+            this.list <- Map(car, lists)
+            these.names <- Map(car, names)
+            names(this.list) <- these.names
+            iter(append(zipped, list(this.list)),
+                 Map(cdr, lists),
+                 Map(cdr, names))
+          }
+        }
+        structure(iter(NULL, lists, Map(names, lists)),
+                  names=names(lists))
+      }
+    }
+    
+    checkEquals(zip.with.names(j=list(a=1, x=4, h=3),
+                               k=list(b=2, y=4, i=10),
+                               l=list(c=3, z=5, 11)),
+                list(j=list(a=1, b=2, c=3),
+                     k=list(x=4, y=4, z=5),
+                     l=list(h=3, i=10, 11)))
+  #+END_SRC
+* DONE =pair.fold.right=
+  CLOSED: [2010-03-17 Wed 04:34]
+  - CLOSING NOTE [2010-03-17 Wed 04:34] \\
+    still TODO: one-list fast-track
+  #+BEGIN_SRC R
+    library(RUnit)
+    source('package.R')
+    
+    cdrs <- function(...)
+      tryCatch(Map(cdr, list(...)),
+               error=function(e) nil)
+    
+    ##' pair-fold-right from SRFI-1.
+    ##' @TODO one-list fast-path
+    pair.fold.right <- function(f, nil, ...) {
+      lists <- list(...)
+      iter <- function(lists) {
+        cdrs <- do.call(cdrs, lists)
+        if (is.nil(cdrs))
+          nil
+        else
+          do.call(f, append(lists, list(iter(cdrs))))
+      }
+      iter(lists)
+    }
+    
+    checkEquals(pair.fold.right(function(a, b, accum)
+                                append(a, append(b, accum)) ,
+                                NULL,
+                                list(1, 2),
+                                list(3, 4)),
+                list(1, 2, 3, 4, 2, 4),
+                'pair.fold.right on multiple lists')
+  #+END_SRC
+* DONE zip.list with one list is broken
+  CLOSED: [2010-03-09 Tue 19:05]
+  - CLOSING NOTE [2010-03-09 Tue 19:05] \\
+    have to do an explicit check for one list, apparently; not tested with zip.c.
+  #+BEGIN_SRC R
+    source('package.R')
+    library(RUnit)
+    
+    checkEquals(zip.list(list(1, 2)),
+                list(1, 2),
+                'zip on a monadic list')
+  #+END_SRC
+
+
